@@ -11,9 +11,9 @@ vectorizer = TfidfVectorizer()
 index = None
 embedding_metadata = []
 
-INDEX_PATH = "faiss_index.bin"
-METADATA_PATH = "embedding_metadata.json"
-VECTORIZER_PATH = "vectorizer_vocab.json"
+INDEX_PATH = "/tmp/faiss_index.bin"
+METADATA_PATH = "/tmp/embedding_metadata.json"
+VECTORIZER_PATH = "/tmp/vectorizer_vocab.json"
 
 def extract_intro_text(file_path, max_chars=1000):
     try:
@@ -67,7 +67,7 @@ def load_faiss_index():
 
 def generate_embeddings(pdf_path, pdf_id):
     global index, vectorizer
-    base_folder = Path("embeddings") / pdf_id
+    base_folder = Path("/tmp") / pdf_id
     txt_folder = base_folder / "txt"
     json_folder = base_folder / "json"
     txt_folder.mkdir(parents=True, exist_ok=True)
@@ -101,7 +101,7 @@ def generate_embeddings(pdf_path, pdf_id):
     save_metadata_json(pdf_id, pdf_path)
 
 def save_metadata_json(pdf_id, pdf_path):
-    json_folder = Path("embeddings") / pdf_id / "json"
+    json_folder = Path("/tmp") / pdf_id / "json"
     json_folder.mkdir(parents=True, exist_ok=True)
     metadata = {
         "id": pdf_id,
@@ -109,7 +109,7 @@ def save_metadata_json(pdf_id, pdf_path):
         "name": Path(pdf_path).stem,
         "json_folder": str(json_folder)
     }
-    with open(json_folder / "metadata.json", "w", encoding="utf-8") as file:
+    with open(json_folder / "/tmp/metadata.json", "w", encoding="utf-8") as file:
         json.dump(metadata, file, ensure_ascii=False, indent=4)
 
 def search_with_faiss(pdf_path, query, pdf_id, top_k=3):
@@ -119,7 +119,7 @@ def search_with_faiss(pdf_path, query, pdf_id, top_k=3):
     print(f"🔍 Pencarian untuk PDF ID: {pdf_id}, Query: '{query}'")
 
     # Tambahan: Pastikan metadata selalu dimuat
-    metadata_path = Path(f"embeddings/{pdf_id}/json/metadata.json")
+    metadata_path = Path(f"/tmp/embeddings/{pdf_id}/json/metadata.json")
     if metadata_path.exists():
         with open(metadata_path, "r", encoding="utf-8") as file:
             pdf_metadata = json.load(file)
