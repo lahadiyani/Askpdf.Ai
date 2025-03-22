@@ -4,3 +4,4 @@ pdfplumber
 numpy
 faiss-cpu
 scikit-learn
+gunicorn
