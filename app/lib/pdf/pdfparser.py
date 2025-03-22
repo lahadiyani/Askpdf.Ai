@@ -110,8 +110,8 @@ def save_metadata_json(pdf_id, pdf_path):
         "name": Path(pdf_path).stem,
         "json_folder": str(json_folder)
     }
-    with open(json_folder / "metadata.json", "w", encoding="utf-8") as file:  # ✅ Perbaiki path
-        json.dump(metadata, file, ensure_ascii=False, indent=4)
+    with open(json_folder / "metadata.json", "w", encoding="utf-8") as metadata_file:
+        json.dump(metadata, metadata_file, ensure_ascii=False, indent=4)
 
 def search_with_faiss(pdf_path, query, pdf_id, top_k=3):
     global index, embedding_metadata, vectorizer
