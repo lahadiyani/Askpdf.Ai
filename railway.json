@@ -1,12 +1,11 @@
 {
   "build": {
-    "env": "python",
     "commands": [
       "pip install --upgrade pip",
       "pip install -r requirements.txt"
     ]
   },
   "deploy": {
-    "startCommand": "flask run"
-  }
+    "startCommand": "flask run --host=0.0.0.0 --port=$PORT"
+  }
 }
