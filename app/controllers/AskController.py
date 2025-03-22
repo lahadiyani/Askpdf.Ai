@@ -1,5 +1,6 @@
 import json, os
 from datetime import datetime
+import io
 from flask import request, jsonify, render_template, current_app
 from werkzeug.utils import secure_filename
 from app.constants.paths import UPLOAD_FOLDER, HISTORY_FILE
@@ -19,35 +20,38 @@ class AskController:
     
     @staticmethod
     def upload_pdf():
-        if 'file' not in request.files:
-            return jsonify({"error": "Tidak ada file yang diunggah"}), 400
+    if 'file' not in request.files:
+        return jsonify({"error": "Tidak ada file yang diunggah"}), 400
 
-        file = request.files['file']
-        filename = secure_filename(file.filename)
-        pdf_id = generate_pdf_id()  # ID unik untuk PDF
+    file = request.files['file']
+    filename = secure_filename(file.filename)
 
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f"{pdf_id}.pdf")
-        file.save(file_path)
+    # 🔍 ID unik (tanpa file fisik)
+    pdf_id = generate_pdf_id() 
 
-        # 🔍 Kirim ke API dengan filename sebagai referensi
-        prompt = (
-            f"Aku Aseko, asisten AI yang ahli menganalisis PDF. "
-            f"Coba tebak judul buku dari nama file ini secara lengkap: '{filename}'. "
-            "Berikan jawaban singkat, hanya nama bukunya saja tanpa deskripsi tambahan."
-        )
-        book_title = ask_pollinations(prompt)
+    # 📂 Baca file langsung di memori (tanpa simpan ke storage)
+    file_stream = io.BytesIO(file.read())
 
-        generate_embeddings(file_path, pdf_id)
+    # 🔍 Kirim ke AI dengan filename sebagai referensi
+    prompt = (
+        f"Aku Aseko, asisten AI yang ahli menganalisis PDF. "
+        f"Coba tebak judul buku dari nama file ini secara lengkap: '{filename}'. "
+        "Berikan jawaban singkat, hanya nama bukunya saja tanpa deskripsi tambahan."
+    )
+    book_title = ask_pollinations(prompt)
 
-        # ✅ Simpan Metadata
-        save_metadata_json(pdf_id, file_path)
+    # 📖 Proses isi PDF langsung dari memory (tanpa menyimpannya ke storage)
+    pdf_text = extract_text_from_pdf(file_stream) 
 
-        return jsonify({
-            "message": "PDF berhasil diunggah!",
-            "pdf_id": pdf_id,
-            "detected_title": book_title,  # ✅ Judul buku hasil prediksi AI
-            "filename": filename
-        }), 200
+    # 📦 Buat metadata JSON tanpa menyimpan file
+    metadata = {
+        "pdf_id": pdf_id,
+        "detected_title": book_title,
+        "filename": filename,
+        "text_preview": pdf_text[:500]  # Potong teks biar gak terlalu panjang
+    }
+
+    return jsonify(metadata), 200
     
     @staticmethod
     def ask_question():
