@@ -2,10 +2,11 @@
   "build": {
     "env": "python",
     "commands": [
-      "pip install -r requirements.txt"
+      "pip3 install --upgrade pip",
+      "pip3 install -r requirements.txt"
     ]
   },
   "deploy": {
-    "startCommand": "gunicorn main:app"
+    "startCommand": "gunicorn main:app --workers 2 --timeout 120"
   }
 }
