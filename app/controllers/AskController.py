@@ -23,7 +23,7 @@ import asyncio  # Untuk async function
 class AskController:
 
     @staticmethod
-    async def index():
+    def index():
         return render_template('base.html')
 
     @staticmethod
