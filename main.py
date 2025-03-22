@@ -12,4 +12,4 @@ if __name__=='__main__':
         with open(HISTORY_FILE, "w") as f:
             json.dump([], f)
 
-    app.run(debug=False, host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=8000)
