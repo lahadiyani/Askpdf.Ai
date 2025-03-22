@@ -1,6 +1,6 @@
 from flask import Blueprint
-from app.constants.paths import UPLOAD_FOLDER
-from app.controllers.AskController import AskController
+from .constants.paths import UPLOAD_FOLDER
+from .controllers.AskController import AskController
 
 main = Blueprint("main", __name__)
 
