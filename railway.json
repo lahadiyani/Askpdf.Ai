@@ -3,7 +3,7 @@
     "commands": [
       "pip install --upgrade pip",
       "pip install -r requirements.txt",
-      "pip install --upgrade flask",
+      "pip install --upgrade flask"
     ]
   },
   "deploy": {
