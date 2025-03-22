@@ -16,7 +16,7 @@ from app.lib.pdf.pdfparser import (
     generate_embeddings,
     search_with_faiss,
     save_metadata_json,
-    extract_text_from_pdf  # Pastikan fungsi ini ada
+    extract_intro_text  # Pastikan fungsi ini ada
 )
 import asyncio  # Untuk async function
 
