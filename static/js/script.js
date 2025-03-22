@@ -8,80 +8,79 @@ const typingIndicator = document.getElementById('typing-indicator');
 const historyContainer = document.querySelector('.room-chat');
 
 // 🚩 Fungsi Upload PDF
-uploadButton.addEventListener('click', () => {
-    fileInput.click();
-    fileInput.removeEventListener('change', handleFileUpload);
-    fileInput.addEventListener('change', handleFileUpload);
-});
+uploadButton.addEventListener('click', () => fileInput.click());
 
-function handleFileUpload() {
+fileInput.addEventListener('change', async function () {
+    if (this.files.length === 0) return alert('🚨 Harap pilih file PDF.');
+
     const file = this.files[0];
-    if (file) {
-        const formData = new FormData();
-        formData.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
-        fetch('https://askpdfai-production.up.railway.app/upload', {
+    try {
+        const response = await fetch('https://askpdfai-production.up.railway.app/upload', {
             method: 'POST',
             body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.pdf_id) {
-                console.log(data);
-                localStorage.setItem('pdf_id', data.pdf_id);
-                localStorage.setItem('filename', data.detected_title); // Simpan judul asli PDF
-                namafile = data.detected_title;
-                alert('✅ PDF berhasil diunggah!');
-                updateBookName();
-                loadHistory();
-                return namafile
-            } else {
-                console.error('❌ Upload gagal:', data.error);
-            }
-        })        
-        .catch(error => console.error('❌ Error:', error));
-    } else {
-        alert('🚨 Harap pilih file PDF.');
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            return alert(`❌ Upload gagal: ${data.error}`);
+        }
+
+        if (data.pdf_id) {
+            localStorage.setItem('pdf_id', data.pdf_id);
+            localStorage.setItem('filename', data.detected_title);
+            alert('✅ PDF berhasil diunggah!');
+            updateBookName();
+            loadHistory();
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+        alert('❗ Terjadi kesalahan saat mengunggah PDF.');
     }
-}
+});
 
 // 🚩 Fungsi Kirim Pesan
-function sendMessage() {
+async function sendMessage() {
     const message = chatInput.value.trim();
     const pdfId = localStorage.getItem('pdf_id');
 
-    if (message && pdfId) {
-        const formData = new FormData();
-        formData.append('question', message);
-        formData.append('pdf_id', pdfId);
+    if (!message || !pdfId) {
+        return alert('🚨 Harap unggah PDF terlebih dahulu!');
+    }
 
-        appendMessage('person', message);
-        showTypingIndicator();
+    const formData = new FormData();
+    formData.append('question', message);
+    formData.append('pdf_id', pdfId);
 
-        fetch('/ask', {
+    appendMessage('person', message);
+    showTypingIndicator();
+
+    try {
+        const response = await fetch('https://askpdfai-production.up.railway.app/ask', {
             method: 'POST',
             body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            hideTypingIndicator();
-            if (data.answer?.trim()) {
-                appendMessage('ai', formatMarkdown(data.answer));
-                chatInput.value = '';
-                chatContainer.style.display = 'flex';
-                loadHistory();
-            } else {
-                appendMessage('ai', '⚠️ Maaf, saya tidak menemukan jawaban yang sesuai.');
-            }
-        })
-        .catch(error => {
-            hideTypingIndicator();
-            console.error('❌ Error:', error);
-            appendMessage('ai', '❗ Terjadi kesalahan saat memproses data.');
         });
-    } else {
-        alert('🚨 Harap unggah PDF terlebih dahulu!');
+
+        const data = await response.json();
+        hideTypingIndicator();
+
+        if (data.answer?.trim()) {
+            appendMessage('ai', formatMarkdown(data.answer));
+        } else {
+            appendMessage('ai', '⚠️ Maaf, saya tidak menemukan jawaban yang sesuai.');
+        }
+    } catch (error) {
+        hideTypingIndicator();
+        console.error('❌ Error:', error);
+        appendMessage('ai', '❗ Terjadi kesalahan saat memproses data.');
     }
+
+    chatInput.value = '';
+    chatContainer.style.display = 'flex';
+    loadHistory();
 }
 
 // 🚩 Event Listener untuk Tombol "Send"
@@ -95,52 +94,49 @@ chatInput.addEventListener('keydown', function (event) {
     }
 });
 
-// 🚩 Fungsi Tambah Pesan ke Chat
+// 🚩 Fungsi Tambah Pesan ke Chat (Mencegah XSS)
 function appendMessage(sender, message) {
     const messageDiv = document.createElement('div');
     messageDiv.className = sender === 'person' ? 'person-chat' : 'ai-chat';
-    const formattedMessage = sender === 'ai' ? formatMarkdown(message) : message;
+
+    const sanitizedMessage = sanitizeHTML(sender === 'ai' ? formatMarkdown(message) : message);
 
     messageDiv.innerHTML = `
-        <div class="message-bubble ${sender}-message">${formattedMessage}</div>
+        <div class="message-bubble ${sender}-message">${sanitizedMessage}</div>
     `;
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+// 🚩 Fungsi Sanitasi untuk Mencegah XSS
+function sanitizeHTML(str) {
+    const tempDiv = document.createElement('div');
+    tempDiv.textContent = str;
+    return tempDiv.innerHTML;
+}
 
+// 🚩 Fungsi Markdown Formatting
 function formatMarkdown(text) {
-    // **Bold**
-    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');  // **Bold**
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');  // *Italic*
+    text = text.replace(/(^|\n)([A-Z][\w\s]+):/g, '<strong>$2:</strong>');  // Heading
 
-    // *Italic*
-    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-    // Heading (misalnya "Langkah-langkah:")
-    text = text.replace(/(^|\n)([A-Z][\w\s]+):/g, '<strong>$2:</strong>');
-
-    // Daftar terurut (1. Item, 2. Item)
+    // Daftar Terurut (1. Item, 2. Item)
     text = text.replace(/(\d+\.\s.*(?:\n(?!\d+\.).*)*)/g, match => {
-        const items = match.trim().split(/\n(?=\d+\.\s)/).map(item => {
-            return item.replace(/^\d+\.\s(.*)/, '<li>$1</li>'); // Pastikan hanya mencocokkan awal baris
-        }).join('');
-        return `<ol>${items}</ol>`;  // Pastikan semua item berada dalam satu <ol>
+        const items = match.trim().split(/\n(?=\d+\.\s)/).map(item => item.replace(/^\d+\.\s(.*)/, '<li>$1</li>')).join('');
+        return `<ol>${items}</ol>`;
     });
 
-    // Daftar tidak terurut (- Item)
+    // Daftar Tidak Terurut (- Item)
     text = text.replace(/(-\s.*(?:\n(?!- ).*)*)/g, match => {
-        const items = match.trim().split(/\n(?=-\s)/).map(item => {
-            return item.replace(/^- (.*)/, '<li>$1</li>'); // Sama seperti di atas, pastikan formatnya benar
-        }).join('');
+        const items = match.trim().split(/\n(?=-\s)/).map(item => item.replace(/^- (.*)/, '<li>$1</li>')).join('');
         return `<ul>${items}</ul>`;
     });
 
-    // Line breaks di luar <li>
-    text = text.replace(/(?!<\/li>)\n/g, '<br>');
+    text = text.replace(/(?!<\/li>)\n/g, '<br>');  // Line Breaks
 
     return text.trim();
 }
-
 
 // 🚩 Indikator "Typing" untuk AI
 function showTypingIndicator() {
@@ -152,42 +148,51 @@ function hideTypingIndicator() {
 }
 
 // 🚩 Fungsi Load Riwayat Chat
-function loadHistory() {
-    // const namabuku = namafile;
-    fetch('/history')
-        .then(response => response.json())
-        .then(data => {
-            historyContainer.innerHTML = '';
-            historyContainer.style.display = 'flex';
+async function loadHistory() {
+    try {
+        const response = await fetch('https://askpdfai-production.up.railway.app/history');
+        const data = await response.json();
 
-            data.history.forEach(entry => {
-                const historyItem = document.createElement('div');
-                historyItem.classList.add('room');
-                historyItem.dataset.pdfId = entry.id;  // Simpan pdf_id di atribut data
+        if (!data.history || data.history.length === 0) {
+            historyContainer.innerHTML = '<p>Belum ada riwayat chat.</p>';
+            return;
+        }
 
-                historyItem.innerHTML = `
-                    <strong>📄 ${entry.question || 'Tidak Diketahui'}</strong><br>
-                    <small>🗓️ ${new Date(entry.timestamp).toLocaleString()}</small>
-                `;
+        historyContainer.innerHTML = ''; // Bersihkan sebelum render ulang
+        historyContainer.style.display = 'flex';
 
-                // Event saat diklik, arahkan ke room sesuai pdf_id
-                historyItem.addEventListener('click', function () {
-                    const pdfId = this.dataset.pdfId;
-                    window.location.href = `/room/${pdfId}`;
-                });
+        data.history.forEach(entry => {
+            const historyItem = document.createElement('div');
+            historyItem.classList.add('room');
+            historyItem.dataset.pdfId = entry.id;
 
-                historyContainer.appendChild(historyItem);
+            historyItem.innerHTML = `
+                <strong>📄 ${entry.question || 'Tidak Diketahui'}</strong><br>
+                <small>🗓️ ${new Date(entry.timestamp).toLocaleString()}</small>
+            `;
+
+            historyItem.addEventListener('click', function () {
+                window.location.href = `https://askpdfai-production.up.railway.app/room/${this.dataset.pdfId}`;
             });
 
-            historyContainer.scrollTop = historyContainer.scrollHeight;
-        })
-        .catch(error => console.error('❌ Gagal memuat riwayat:', error));
+            historyContainer.appendChild(historyItem);
+        });
+
+        historyContainer.scrollTop = historyContainer.scrollHeight;
+    } catch (error) {
+        console.error('❌ Gagal memuat riwayat:', error);
+        historyContainer.innerHTML = '<p>⚠️ Gagal memuat riwayat chat.</p>';
+    }
 }
 
+// 🚩 Fungsi Update Nama Buku
 function updateBookName() {
     const bookNameElement = document.querySelector('.book-name');
+    if (!bookNameElement) return; // Mencegah error jika elemen tidak ditemukan
+
     const filename = localStorage.getItem('filename');
     bookNameElement.textContent = filename || 'Nama Buku';
 }
 
+// 🚩 Event Listener Saat DOM Siap
 document.addEventListener('DOMContentLoaded', updateBookName);
