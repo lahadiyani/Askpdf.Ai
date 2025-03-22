@@ -7,6 +7,6 @@
     ]
   },
   "deploy": {
-    "startCommand": "gunicorn main:app --workers 2 --timeout 120"
-  }
+    "startCommand": "flask run"
+  }
 }
