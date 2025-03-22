@@ -20,7 +20,7 @@ function handleFileUpload() {
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch('/upload', {
+        fetch('https://askpdfai-production.up.railway.app/upload', {
             method: 'POST',
             body: formData
         })
