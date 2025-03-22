@@ -6,6 +6,6 @@
     ]
   },
   "deploy": {
-    "startCommand": "python main.py"
+    "startCommand": "gunicorn main:app"
   }
 }
