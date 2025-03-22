@@ -5,3 +5,4 @@ numpy
 faiss-cpu
 scikit-learn
 gunicorn
+flask_cors
