@@ -18,7 +18,7 @@ fileInput.addEventListener('change', async function () {
     formData.append('file', file);
 
     try {
-        const response = await fetch('https://askpdfai-production.up.railway.app/upload', {
+        const response = await fetch('/upload', {
             method: 'POST',
             body: formData
         });
@@ -59,7 +59,7 @@ async function sendMessage() {
     showTypingIndicator();
 
     try {
-        const response = await fetch('https://askpdfai-production.up.railway.app/ask', {
+        const response = await fetch('/ask', {
             method: 'POST',
             body: formData
         });
@@ -150,7 +150,7 @@ function hideTypingIndicator() {
 // 🚩 Fungsi Load Riwayat Chat
 async function loadHistory() {
     try {
-        const response = await fetch('https://askpdfai-production.up.railway.app/history');
+        const response = await fetch('/history');
         const data = await response.json();
 
         if (!data.history || data.history.length === 0) {
@@ -172,7 +172,7 @@ async function loadHistory() {
             `;
 
             historyItem.addEventListener('click', function () {
-                window.location.href = `https://askpdfai-production.up.railway.app/room/${this.dataset.pdfId}`;
+                window.location.href = `/room/${this.dataset.pdfId}`;
             });
 
             historyContainer.appendChild(historyItem);
