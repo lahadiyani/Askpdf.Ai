@@ -4,15 +4,15 @@ import io
 from datetime import datetime
 from flask import request, jsonify, render_template
 from werkzeug.utils import secure_filename
-from app.constants.paths import UPLOAD_FOLDER, HISTORY_FILE
-from app.utils.functions import (
+from .constants.paths import UPLOAD_FOLDER, HISTORY_FILE
+from .utils.functions import (
     generate_pdf_id, 
     is_contextual_question, 
     get_last_answer, 
     save_to_history
 )
-from app.lib.pdf.ai import ask_pollinations
-from app.lib.pdf.pdfparser import (
+from .lib.pdf.ai import ask_pollinations
+from .lib.pdf.pdfparser import (
     generate_embeddings,
     search_with_faiss,
     save_metadata_json,
