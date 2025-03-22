@@ -1,8 +1,6 @@
 import json, os
-from app import create_app
+from app.route import app
 from app.constants.paths import UPLOAD_FOLDER, HISTORY_FILE
-
-app = create_app()
 
 if __name__=='__main__':
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
