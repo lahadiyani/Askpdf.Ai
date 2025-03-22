@@ -75,7 +75,8 @@ def generate_embeddings(pdf_path, pdf_id):
 
     all_texts = []
     with pdfplumber.open(pdf_path) as pdf:
-        all_texts = [page.extract_text().strip() for page in pdf.pages if page.extract_text()]
+        all_texts = [page.extract_text() for page in pdf.pages if page.extract_text()]
+        all_texts = [text.strip() for text in all_texts if text]  # ✅ Tangani None
 
     if not all_texts:
         return
@@ -109,17 +110,16 @@ def save_metadata_json(pdf_id, pdf_path):
         "name": Path(pdf_path).stem,
         "json_folder": str(json_folder)
     }
-    with open(json_folder / "/tmp/metadata.json", "w", encoding="utf-8") as file:
+    with open(json_folder / "metadata.json", "w", encoding="utf-8") as file:  # ✅ Perbaiki path
         json.dump(metadata, file, ensure_ascii=False, indent=4)
 
 def search_with_faiss(pdf_path, query, pdf_id, top_k=3):
     global index, embedding_metadata, vectorizer
-    load_faiss_index()  # Pastikan index dan metadata dimuat
+    load_faiss_index()  
 
     print(f"🔍 Pencarian untuk PDF ID: {pdf_id}, Query: '{query}'")
 
-    # Tambahan: Pastikan metadata selalu dimuat
-    metadata_path = Path(f"/tmp/embeddings/{pdf_id}/json/metadata.json")
+    metadata_path = Path(f"/tmp/{pdf_id}/json/metadata.json")  # ✅ Perbaiki path
     if metadata_path.exists():
         with open(metadata_path, "r", encoding="utf-8") as file:
             pdf_metadata = json.load(file)
@@ -127,22 +127,21 @@ def search_with_faiss(pdf_path, query, pdf_id, top_k=3):
         print("⚠️ Metadata JSON tidak ditemukan.")
         return [{"error": "Metadata PDF tidak ditemukan."}]
 
-    # Filter metadata untuk PDF tertentu
     pdf_metadata = [meta for meta in embedding_metadata if meta["doc_id"] == pdf_id]
 
     if not pdf_metadata:
         print("⚠️ Tidak ada metadata untuk PDF ini.")
         return [{"error": "Tidak ada data untuk PDF ini."}]
 
-    # Proses pencarian FAISS
     query_vector = vectorizer.transform([query]).toarray()[0]
+
+    if index is None:
+        print("🚨 FAISS Index belum dimuat!")
+        return [{"error": "FAISS Index belum tersedia."}]
 
     if index.d != len(query_vector):
         print(f"⚠️ Dimensi tidak cocok: Index {index.d}, Query {len(query_vector)}")
-        if len(query_vector) > index.d:
-            query_vector = query_vector[:index.d]
-        else:
-            query_vector = np.pad(query_vector, (0, index.d - len(query_vector)), 'constant')
+        query_vector = np.array(query_vector, dtype='float32').reshape(1, -1)
 
     results = []
     if np.count_nonzero(query_vector) > 0:
@@ -157,7 +156,8 @@ def search_with_faiss(pdf_path, query, pdf_id, top_k=3):
 
 def categorize_pdf_elements(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
-        all_texts = [page.extract_text().strip() for page in pdf.pages if page.extract_text()]
+        all_texts = [page.extract_text() for page in pdf.pages if page.extract_text()]
+        all_texts = [text.strip() for text in all_texts if text]  # ✅ Tangani None
 
     if not all_texts:
         return []
