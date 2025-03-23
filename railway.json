@@ -6,6 +6,6 @@
     ]
   },
   "deploy": {
-    "startCommand": "gunicorn -w 4 -b 0.0.0.0:5000 main:app"
+    "startCommand": "flask --host=0.0.0.0 --port=8000 --app main run"
   }
 }
