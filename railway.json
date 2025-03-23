@@ -6,6 +6,6 @@
     ]
   },
   "deploy": {
-    "startCommand": "flask run --app main"
+    "startCommand": "flask run --app main --host=0.0.0.0"
   }
 }
