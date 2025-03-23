@@ -6,6 +6,6 @@
     ]
   },
   "deploy": {
-    "startCommand": "flask --app main run"
+    "startCommand": "flask run --app main"
   }
 }
